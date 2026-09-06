@@ -1,7 +1,5 @@
 """
 Central config for the BLE tracker Python side.
-Edit NODE_POSITIONS and RSSI calibration constants once you've
-measured them off your 3 ESP32 nodes.
 """
 
 # MQTT broker (Mosquitto)
