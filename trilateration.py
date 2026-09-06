@@ -3,7 +3,6 @@ RSSI -> distance conversion, and multi-node trilateration via
 least-squares (handles >3 nodes and noisy RSSI better than pure
 geometric 3-circle intersection).
 """
-
 import numpy as np
 from config import TX_POWER, PATH_LOSS_EXPONENT
 
@@ -30,11 +29,13 @@ def trilaterate(node_positions, distances):
     positions = np.array(node_positions, dtype=float)
     dists = np.array(distances, dtype=float)
 
-    # Linearize by subtracting the last equation from all others:
-    # (x - xi)^2 + (y - yi)^2 = di^2
+    # Each node gives a circle equation: (x - xi)^2 + (y - yi)^2 = di^2.
+    # These are nonlinear in (x, y), which is hard to solve directly.
+    # Trick: subtract the last node's equation from every other one -
+    # the x^2 and y^2 terms cancel out, leaving a linear equation in (x, y)
+    # per node. That turns this into a solvable linear system A @ [x, y] = b.
     x_last, y_last = positions[-1]
     d_last = dists[-1]
-
     A = []
     b = []
     for (xi, yi), di in zip(positions[:-1], dists[:-1]):
@@ -44,21 +45,12 @@ def trilaterate(node_positions, distances):
             - (xi**2 - x_last**2)
             - (yi**2 - y_last**2)
         )
-
     A = np.array(A)
     b = np.array(b)
 
-    # Least-squares solve (works even with >3 nodes / overdetermined system)
+    # Least-squares solve (works even with >3 nodes / overdetermined system).
+    # With exactly 3 nodes this gives the same answer as solving directly;
+    # with 4+ nodes it finds the best-fit point when readings disagree
+    # slightly, instead of requiring an exact intersection.
     solution, *_ = np.linalg.lstsq(A, b, rcond=None)
     return float(solution[0]), float(solution[1])
-
-
-if __name__ == "__main__":
-    # Quick sanity check with a known point
-    nodes = [(0, 0), (3, 0), (1.5, 2.6)]
-    true_point = (1.5, 1.0)
-    dists = [
-        np.hypot(true_point[0] - x, true_point[1] - y) for x, y in nodes
-    ]
-    est = trilaterate(nodes, dists)
-    print(f"True: {true_point}, Estimated: {est}")
