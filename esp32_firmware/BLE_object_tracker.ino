@@ -1,5 +1,5 @@
 // Found in example sketches
-#define MQTT_MAX_PACKET_SIZE 256  // default (128) is too small for the JSON payload
+#define MQTT_MAX_PACKET_SIZE 256  // Reserve space for the JSON payload.
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <BLEDevice.h>
@@ -25,7 +25,7 @@ PubSubClient mqttClient(espClient);
 
 bool haveSmoothedRSSI = false;
 float smoothedRSSI = 0;
-const float smoothingFactor = 0.2;  // lower = smoother/slower to react, higher = more responsive/jumpier
+const float smoothingFactor = 0.2;  // Lower values smooth more but respond more slowly.
 
 void setup() {
   Serial.begin(115200);
@@ -66,19 +66,19 @@ void loop() {
     BLEAdvertisedDevice device = foundDevices->getDevice(i);
     int rssi = device.getRSSI();
 
-    float txPower = -60;  // represents what rssi would the device read at 1 meter away
-    float n = 3.14;       // how much the signal weakens travelling through air, increase if passing through furniture
+    float txPower = -60;  // RSSI measured at one meter.
+    float n = 3.14;       // Calibrate signal loss for the room.
     float distance = pow(10, (txPower - rssi) / (10 * n));
 
     Serial.print("Device: ");
-    Serial.print(device.getAddress().toString().c_str());  // turns the bluetooth address to text to be printed
+    Serial.print(device.getAddress().toString().c_str());
     Serial.print(" RSSI: ");
     Serial.println(rssi);
     Serial.print(" Distance: ");
     Serial.println(distance);
 
     if (device.getAddress().toString() == "macAddress") {
-      // Exponential smoothing to reduce RSSI jitter
+      // Smooth signal fluctuations before estimating distance.
       if (!haveSmoothedRSSI) {
         smoothedRSSI = rssi;
         haveSmoothedRSSI = true;

@@ -1,10 +1,4 @@
-"""
-Live dashboard: plots the 3 fixed ESP32 node positions and the
-estimated (x, y) position of each detected BLE target, refreshed
-on a timer via matplotlib animation.
-
-Run with the MQTT broker already up and at least one ESP32 publishing.
-"""
+"""Plot receiver locations and the estimated BLE target position."""
 
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -16,7 +10,7 @@ from trilateration import rssi_to_distance, trilaterate
 
 
 def compute_positions(store: ReadingsStore):
-    """Returns {target: (x, y)} for every target with enough fresh nodes."""
+    """Estimate a position when enough receivers have fresh readings."""
     positions = {}
     for target in store.known_targets():
         readings = store.fresh_readings_for(target)
